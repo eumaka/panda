@@ -40,7 +40,9 @@ def submit_panda_job(stf_json):
     """
     unique_id = str(uuid.uuid4())
     filename = stf_json.get("filename", "unknown")
+
     out_ds_name = f"user.eumaka.{filename}.{unique_id}"
+    unique_taskname = f"stf_task_{filename}_{unique_id}"
 
     exec_str = f"./my_script_new.sh '{json.dumps(stf_json)}'"
 
@@ -50,7 +52,7 @@ def submit_panda_job(stf_json):
         "--nJobs", "1",
         "--vo", "wlcg",
         "--site", "BNL_PanDA_1",
-        "--prodSourceLabel", "test",
+        "--prodSourceLabel", "managed",
         "--workingGroup", PANDA_AUTH_VO,
         "--noBuild",
         "--outputs", "myout.txt"
@@ -58,12 +60,14 @@ def submit_panda_job(stf_json):
 
     params = PrunScript.main(True, prun_args)
 
-    # Use filename + uuid as taskName
-    params['taskName'] = f"stf_task_{filename}_{unique_id}"
+    # Set a truly unique taskName
+    params['taskName'] = unique_taskname
+
+    print(f"[DEBUG] Params being submitted:\n{json.dumps(params, indent=2)}")
 
     c = panda_api.get_api()
 
-    print(f"[INFO] Submitting PanDA job for STF {filename} …")
+    print(f"[INFO] Submitting PanDA job for STF: {filename}")
     status, result_tuple = c.submit_task(params)
 
     if status == 0:
